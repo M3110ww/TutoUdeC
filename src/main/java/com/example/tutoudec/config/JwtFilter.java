@@ -21,6 +21,13 @@ public class JwtFilter extends OncePerRequestFilter {
     public JwtFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
     }
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+
+        return path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs");
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

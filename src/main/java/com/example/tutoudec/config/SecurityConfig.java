@@ -21,18 +21,31 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Rutas públicas: register y login no requieren token
+
+                        // Swagger
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
+
+                        // Auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        // Todo lo demás requiere token JWT válido
+
+                        // Todo lo demás requiere login
                         .anyRequest().authenticated()
                 )
-                // Añadir nuestro filtro ANTES del filtro de usuario/contraseña de Spring
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                );
+
+        http.addFilterBefore(jwtFilter,
+                UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
