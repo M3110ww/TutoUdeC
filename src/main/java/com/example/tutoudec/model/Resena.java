@@ -1,5 +1,6 @@
 package com.example.tutoudec.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -15,13 +16,14 @@ public class Resena {
 
     @OneToOne
     @JoinColumn(name = "session_id", nullable = false, unique = true)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Sesion session;
 
     @ManyToOne
     @JoinColumn(name = "student_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Estudiante student;
 
-    // Rating from 1 to 5
     @Column(nullable = false)
     private Integer rating;
 

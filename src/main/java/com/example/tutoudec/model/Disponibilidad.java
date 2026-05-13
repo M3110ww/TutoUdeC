@@ -3,6 +3,8 @@ package com.example.tutoudec.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalTime;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 
 @Entity
 @Table(name = "availability")
@@ -15,9 +17,9 @@ public class Disponibilidad {
 
     @ManyToOne
     @JoinColumn(name = "tutor_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Tutor tutor;
 
-    // 1=Monday, 2=Tuesday ... 7=Sunday
     @Column(name = "day_of_week", nullable = false)
     private Integer dayOfWeek;
 

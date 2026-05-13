@@ -1,5 +1,6 @@
 package com.example.tutoudec.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -15,14 +16,17 @@ public class Sesion {
 
     @ManyToOne
     @JoinColumn(name = "tutor_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Tutor tutor;
 
     @ManyToOne
     @JoinColumn(name = "student_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Estudiante student;
 
     @ManyToOne
     @JoinColumn(name = "subject_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Materia subject;
 
     @Column(name = "scheduled_at", nullable = false)

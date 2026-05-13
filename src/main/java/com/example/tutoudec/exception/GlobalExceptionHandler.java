@@ -12,9 +12,11 @@ import java.util.Map;
 public class
 GlobalExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handlerNotFound(ResourceNotFoundException ex){
-        return buildResponse (HttpStatus.NOT_FOUND, ex.getMessage());
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<?> handleNoResource(
+            org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+        // Dejar que Spring maneje los recursos estáticos normalmente
+        return ResponseEntity.notFound().build();
     }
 
     @ExceptionHandler(BusinessException.class)
