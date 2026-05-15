@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: tutoudec_db
+    environment:
+      POSTGRES_DB: tutoudec_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - "5432:5432"
+    volumes:
+      - tutoudec_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  tutoudec_data:
