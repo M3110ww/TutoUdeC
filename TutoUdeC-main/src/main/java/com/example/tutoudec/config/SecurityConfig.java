@@ -21,11 +21,7 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final JwtFilter jwtFilter;
-
-    public SecurityConfig(JwtFilter jwtFilter) {
-        this.jwtFilter = jwtFilter;
-    }
+    // ... (constructor y jwtFilter)
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -35,28 +31,24 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // 1. PERMITIR explícitamente los preflights de CORS
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Swagger
-                        .requestMatchers(
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs",
-                                "/v3/api-docs/**",
-                                "/webjars/**"
-                        ).permitAll()
-
-                        // Auth
+                        // Swagger y Auth (Público)
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // Availability — students can GET, only tutors can POST/DELETE
+                        // 2. Disponibilidad (Flexibilidad en roles)
+                        // Para GET: Cualquier usuario con sesión activa (Estudiante o Tutor)
                         .requestMatchers(HttpMethod.GET, "/api/availability/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/availability/**").hasAuthority("TUTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/availability/**").hasAuthority("TUTOR")
+
+                        // Para POST/DELETE: Solo TutoLinker/Tutor (Aceptamos ambas variantes de nombre)
+                        .requestMatchers(HttpMethod.POST, "/api/availability/**").hasAnyAuthority("TUTOR", "ROLE_TUTOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/availability/**").hasAnyAuthority("TUTOR", "ROLE_TUTOR")
 
                         // Admin
-                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
 
-                        // Everything else requires auth
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -64,17 +56,18 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Este método es crítico — sin él el front recibe 403 por CORS
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
+        // 3. Importante: Permitir explícitamente el origen de Android/Emulador
         config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With"));
         config.setExposedHeaders(List.of("Authorization"));
-        config.setAllowCredentials(false);
+        config.setAllowCredentials(true); // Cambiado a true para permitir el envío de cookies/auth si fuera necesario
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
+}
