@@ -1,59 +1,51 @@
-package com.example.tutoudec.config;
+bro subelo tu para que sea mas easy @Bean
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session ->
+                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+                    // Swagger
+                    .requestMatchers(
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/v3/api-docs",
+                            "/v3/api-docs/**",
+                            "/webjars/**"
+                    ).permitAll()
 
-@Configuration
-@EnableWebSecurity
-public class SecurityConfig {
+                    // Auth
+                    .requestMatchers("/api/auth/**").permitAll()
 
-    private final JwtFilter jwtFilter;
+                    // Availability — students can GET, only tutors can POST/DELETE
+                    .requestMatchers(HttpMethod.GET, "/api/availability/**").authenticated()
+                    .requestMatchers(HttpMethod.POST, "/api/availability/**").hasAuthority("TUTOR")
+                    .requestMatchers(HttpMethod.DELETE, "/api/availability/**").hasAuthority("TUTOR")
 
-    public SecurityConfig(JwtFilter jwtFilter) {
-        this.jwtFilter = jwtFilter;
-    }
+                    // Admin
+                    .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        // Permisos para Swagger
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
+                    // Everything else requires auth
+                    .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
-                        // Permisos para Auth
-                        .requestMatchers("/api/auth/**").permitAll()
+    return http.build();
+}
 
-                        // --- CORRECCIÓN AQUÍ: Acceso a Disponibilidad ---
-                        // Cualquier usuario autenticado (Estudiante o Tutor) puede ver los horarios (GET)
-                        .requestMatchers(HttpMethod.GET, "/api/availability/**").authenticated()
+// Este método es crítico — sin él el front recibe 403 por CORS
+@Bean
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration config = new CorsConfiguration();
+    config.setAllowedOriginPatterns(List.of("*"));
+    config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+    config.setAllowedHeaders(List.of("*"));
+    config.setExposedHeaders(List.of("Authorization"));
+    config.setAllowCredentials(false);
 
-                        // Solo los tutores pueden crear o borrar disponibilidad
-                        .requestMatchers(HttpMethod.POST, "/api/availability/**").hasAuthority("TUTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/availability/**").hasAuthority("TUTOR")
-
-                        // Todo lo demás requiere login
-                        .anyRequest().authenticated()
-                )
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                );
-
-        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
-        return http.build();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", config);
+    return source;
 }
