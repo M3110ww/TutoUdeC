@@ -1,51 +1,74 @@
-bro subelo tu para que sea mas easy @Bean
-public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session ->
-                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
+package com.example.tutoudec.config;
 
-                    // Swagger
-                    .requestMatchers(
-                            "/swagger-ui.html",
-                            "/swagger-ui/**",
-                            "/v3/api-docs",
-                            "/v3/api-docs/**",
-                            "/webjars/**"
-                    ).permitAll()
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-                    // Auth
-                    .requestMatchers("/api/auth/**").permitAll()
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
 
-                    // Availability — students can GET, only tutors can POST/DELETE
-                    .requestMatchers(HttpMethod.GET, "/api/availability/**").authenticated()
-                    .requestMatchers(HttpMethod.POST, "/api/availability/**").hasAuthority("TUTOR")
-                    .requestMatchers(HttpMethod.DELETE, "/api/availability/**").hasAuthority("TUTOR")
+    private final JwtFilter jwtFilter;
 
-                    // Admin
-                    .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+    public SecurityConfig(JwtFilter jwtFilter) {
+        this.jwtFilter = jwtFilter;
+    }
 
-                    // Everything else requires auth
-                    .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
 
-    return http.build();
-}
+                        // Swagger
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/webjars/**"
+                        ).permitAll()
 
-// Este método es crítico — sin él el front recibe 403 por CORS
-@Bean
-public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOriginPatterns(List.of("*"));
-    config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-    config.setAllowedHeaders(List.of("*"));
-    config.setExposedHeaders(List.of("Authorization"));
-    config.setAllowCredentials(false);
+                        // Auth
+                        .requestMatchers("/api/auth/**").permitAll()
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", config);
-    return source;
-}
+                        // Availability — students can GET, only tutors can POST/DELETE
+                        .requestMatchers(HttpMethod.GET, "/api/availability/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/availability/**").hasAuthority("TUTOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/availability/**").hasAuthority("TUTOR")
+
+                        // Admin
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+
+                        // Everything else requires auth
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    // Este método es crítico — sin él el front recibe 403 por CORS
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOriginPatterns(List.of("*"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Authorization"));
+        config.setAllowCredentials(false);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
