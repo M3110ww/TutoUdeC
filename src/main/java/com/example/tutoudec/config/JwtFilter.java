@@ -21,12 +21,13 @@ public class JwtFilter extends OncePerRequestFilter {
     public JwtFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
     }
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-
         return path.startsWith("/swagger-ui")
-                || path.startsWith("/v3/api-docs");
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/api/auth");
     }
 
     @Override
@@ -37,20 +38,24 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // Si no hay token o no empieza con "Bearer ", dejamos pasar
-        // (Security Config decide si la ruta requiere auth o no)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authHeader.substring(7); // quitar "Bearer "
+        String token = authHeader.substring(7);
 
         if (jwtUtil.isValid(token)) {
             String email = jwtUtil.extractEmail(token);
-            // Autenticar en el contexto de Spring Security
+            // Extract the actual role from the token claim
+            String role  = jwtUtil.extractRole(token);
+
             UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(email, null, List.of(new SimpleGrantedAuthority("USER")));
+                    new UsernamePasswordAuthenticationToken(
+                            email,
+                            null,
+                            List.of(new SimpleGrantedAuthority(role)) // STUDENT | TUTOR | ADMIN
+                    );
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
