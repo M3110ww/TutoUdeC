@@ -19,6 +19,16 @@ GlobalExceptionHandler {
         return ResponseEntity.notFound().build();
     }
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<?> handleResourceNotFound(ResourceNotFoundException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", 404);
+        body.put("error", "Not Found");
+        body.put("message", ex.getMessage()); // Ejemplo: "No se encontró perfil para el usuario 10"
+        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    }
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Map<String, Object>> handlerBusiness(BusinessException ex){
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage());

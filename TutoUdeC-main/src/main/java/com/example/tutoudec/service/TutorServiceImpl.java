@@ -27,6 +27,14 @@ public class TutorServiceImpl implements TutorService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public TutorResponse findByUserId(Long userId) {
+        return tutorRepository.findByUserId(userId)
+                .map(TutorResponse::new)
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found for user id: " + userId));
+    }
+
+    @Override
     public TutorResponse registerTutor(Long userId, TutorRequest request) {
         Usuario user = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));

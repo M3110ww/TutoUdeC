@@ -27,6 +27,14 @@ public class EstudianteServiceImpl implements EstudianteService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public StudentResponse findByUserId(Long userId) {    return estudianteRepository.findByUserId(userId)
+            .map(StudentResponse::new)
+            .orElseThrow(() -> new ResourceNotFoundException("Student profile not found for user id: " + userId));
+    }
+
+
+    @Override
     public StudentResponse registerStudent(Long userId, StudentRequest request) {
         Usuario user = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));

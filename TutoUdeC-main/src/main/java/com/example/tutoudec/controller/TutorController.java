@@ -40,6 +40,12 @@ public class TutorController {
 
 // El repositorio TutorRepository ya tiene findByUserId — solo exponer el endpoint.
 
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<TutorResponse> getByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(tutorService.findByUserId(userId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<TutorResponse> getById(@PathVariable Long id) { return ResponseEntity.ok(tutorService.findById(id)); }
 

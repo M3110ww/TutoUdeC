@@ -17,6 +17,7 @@ public class EstudianteController {
     @GetMapping
     public ResponseEntity<List<StudentResponse>> getAll() { return ResponseEntity.ok(estudianteService.getAll()); }
 
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<StudentResponse> getByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(estudianteService.findByUserId(userId));
